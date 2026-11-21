@@ -375,7 +375,7 @@ app.get("/api/products", async (request, response, next) => {
        JOIN entrepreneur_profiles p ON p.id = pr.entrepreneur_id
        JOIN categories c ON c.id = p.category_id
        WHERE ${filters.join(" AND ")}
-       ORDER BY pr.featured DESC, pr.created_at DESC
+       ORDER BY pr.featured DESC, pr.created_at DESC, pr.id ASC
        LIMIT $${values.length - 1} OFFSET $${values.length}`,
       values
     );
