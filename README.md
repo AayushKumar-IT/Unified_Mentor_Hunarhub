@@ -181,7 +181,8 @@ frontend/
 - Registration and sign-in endpoints are rate-limited.
 - State-changing API routes validate the trusted frontend origin.
 - Product image uploads are limited to supported image formats and 5 MB.
-- Local uploads are stored under `backend/uploads`; production deployments should use durable object storage.
+- Uploads are stored under `backend/uploads`. For Render production, attach a persistent disk mounted at `/opt/render/project/src/backend/uploads` so files survive deploys and restarts. Vercel forwards `/media/*` requests to the Render API.
+- Product records only store image paths; they do not contain the uploaded files. If an existing image URL returns 404, its file is missing from the Render disk and must be uploaded again after persistent storage is configured.
 - Product orders are requests and do not represent payment processing or payment confirmation.
 - In-app notifications are supported; email/SMS delivery is not currently included.
 

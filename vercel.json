@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/media/:path*",
+      "destination": "https://hunarhub-backend-7f92.onrender.com/media/:path*"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://hunarhub-backend-7f92.onrender.com/api/:path*"
     }
