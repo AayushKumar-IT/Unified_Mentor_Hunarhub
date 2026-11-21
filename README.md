@@ -95,7 +95,7 @@ psql -h localhost -U hunarhub -d hunarhub -f backend\sql\schema.sql
 psql -h localhost -U hunarhub -d hunarhub -f backend\sql\seed.sql
 ```
 
-The seed file creates the default categories and skills. It does not create demo customer or entrepreneur accounts.
+The seed file creates the default categories and skills. It does not create sample entrepreneurs or sample services. If demo profiles from an earlier version exist, the seed deactivates them and their listings without deleting transaction history or registered profiles.
 
 ### 4. Install dependencies and run
 
@@ -135,9 +135,11 @@ Fresh databases should use the current `backend/sql/schema.sql`. For databases c
 psql -h localhost -U hunarhub -d hunarhub -f backend\sql\migrations\002_accounts_transactions.sql
 psql -h localhost -U hunarhub -d hunarhub -f backend\sql\migrations\003_skills_catalog.sql
 psql -h localhost -U hunarhub -d hunarhub -f backend\sql\migrations\004_in_app_notifications.sql
+psql -h localhost -U hunarhub -d hunarhub -f backend\sql\migrations\005_demo_entrepreneurs.sql
+psql -h localhost -U hunarhub -d hunarhub -f backend\sql\migrations\006_hide_demo_profiles.sql
 ```
 
-Do not rerun migrations that have already been applied.
+Run migrations only when upgrading a database that does not already have those changes. The demo-profile cleanup migration deactivates sample profiles and their listings while preserving any transaction history. The seed can also be rerun safely to refresh catalog entries and keep old demo profiles inactive.
 
 ## Development commands
 

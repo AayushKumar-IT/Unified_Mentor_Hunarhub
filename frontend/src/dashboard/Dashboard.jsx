@@ -5,7 +5,29 @@ function StatusBadge({ status }) {
   return <span className={`status-badge status-${status}`}>{status.replaceAll("_", " ")}</span>;
 }
 
-function EntrepreneurDashboard() {
+function DashboardHeading({ eyebrow, title, description, user }) {
+  const displayName = user?.displayName?.trim() || "HunarHub member";
+  const initial = Array.from(displayName)[0]?.toLocaleUpperCase() ?? "H";
+
+  return (
+    <header className="workspace-heading">
+      <div className="workspace-heading-copy">
+        <div className="eyebrow">{eyebrow}</div>
+        <h1>{title}</h1>
+        <p>{description}</p>
+      </div>
+      <div className="workspace-account">
+        <span className="workspace-avatar" aria-hidden="true">{initial}</span>
+        <span className="workspace-account-copy">
+          <strong>{displayName}</strong>
+          <small>{user?.role === "admin" ? "Administrator" : user?.role === "entrepreneur" ? "Entrepreneur account" : "Customer account"}</small>
+        </span>
+      </div>
+    </header>
+  );
+}
+
+function EntrepreneurDashboard({ user }) {
   const [profile, setProfile] = useState(null);
   const [listings, setListings] = useState({ services: [], products: [] });
   const [transactions, setTransactions] = useState({ requests: [], orders: [] });
@@ -223,8 +245,13 @@ function EntrepreneurDashboard() {
         <span>{approvalSummary}</span>
         <a href="#profile-approval-status">View approval status</a>
       </div>
-      <div className="dashboard-title">
-        <div><div className="eyebrow">MAKER SPACE</div><h1>Your dashboard</h1></div>
+      <DashboardHeading
+        eyebrow="MAKER WORKSPACE"
+        title="Your dashboard"
+        description="Manage your profile, showcase your work, and keep up with customer requests."
+        user={user}
+      />
+      <div className="maker-availability-row">
         <button className="btn btn-outline-dark rounded-pill" onClick={toggleAvailability}>
           {profile.availability === "available" ? "Available for requests" : "Not taking requests"}
         </button>
@@ -407,7 +434,7 @@ function EntrepreneurDashboard() {
   );
 }
 
-function CustomerActivity() {
+function CustomerActivity({ user }) {
   const [transactions, setTransactions] = useState([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -475,12 +502,34 @@ function CustomerActivity() {
     }
   }
 
+  const pendingTransactions = transactions.filter((item) =>
+    ["pending", "pending_confirmation", "accepted", "confirmed", "in_progress", "ready"].includes(item.status)
+  ).length;
+  const completedTransactions = transactions.filter((item) => item.status === "completed").length;
+
   return (
     <section className="dashboard-page">
-      <div className="eyebrow">YOUR HUNARHUB</div><h1>My activity</h1>
+      <DashboardHeading
+        eyebrow="YOUR HUNARHUB"
+        title="My activity"
+        description="Track your service requests and product orders, and stay connected with local makers."
+        user={user}
+      />
       {error && <div className="alert alert-danger" role="alert">{error}</div>}
       {message && <div className="alert alert-success" role="status">{message}</div>}
-      <div className="dashboard-card">
+      <div className="dashboard-stats customer-activity-stats">
+        <div><span>Total requests and orders</span><strong>{transactions.length}</strong></div>
+        <div><span>In progress</span><strong>{pendingTransactions}</strong></div>
+        <div><span>Completed</span><strong>{completedTransactions}</strong></div>
+      </div>
+      <section className="dashboard-card customer-activity-card">
+        <div className="customer-activity-heading">
+          <div>
+            <h2>Orders and service requests</h2>
+            <p>Your recent activity with HunarHub makers.</p>
+          </div>
+          <span className="activity-count">{transactions.length} {transactions.length === 1 ? "item" : "items"}</span>
+        </div>
         {transactions.length ? transactions.map((item) => (
           <div className="customer-activity-item" key={`${item.type}-${item.id}`}>
             <div className="transaction-row">
@@ -542,13 +591,19 @@ function CustomerActivity() {
               </form>
             )}
           </div>
-        )) : <p className="dashboard-empty">Your requests and orders will appear here.</p>}
-      </div>
+        )) : (
+          <div className="customer-activity-empty">
+            <span className="customer-empty-icon" aria-hidden="true">✳</span>
+            <strong>Your HunarHub activity starts here</strong>
+            <p>When you request a service or order a handmade product, you’ll find its progress here.</p>
+          </div>
+        )}
+      </section>
     </section>
   );
 }
 
-function AdminDashboard() {
+function AdminDashboard({ user }) {
   const [overview, setOverview] = useState(null);
   const [complaints, setComplaints] = useState([]);
   const [catalog, setCatalog] = useState({ categories: [], skills: [] });
@@ -675,7 +730,12 @@ function AdminDashboard() {
 
   return (
     <section className="dashboard-page">
-      <div className="eyebrow">PLATFORM OPERATIONS</div><h1>Admin dashboard</h1>
+      <DashboardHeading
+        eyebrow="PLATFORM OPERATIONS"
+        title="Admin dashboard"
+        description="Review applications, oversee marketplace activity, and manage platform settings."
+        user={user}
+      />
       {error && <div className="alert alert-danger" role="alert">{error}</div>}
       <div className="dashboard-stats">
         <button className="dashboard-stat-card" type="button" aria-label="View customer activity" onClick={() => navigateToSection("admin-customer-activity")}>
@@ -861,7 +921,7 @@ function AdminDashboard() {
 }
 
 export default function Dashboard({ user }) {
-  if (user.role === "entrepreneur") return <EntrepreneurDashboard />;
-  if (user.role === "admin") return <AdminDashboard />;
-  return <CustomerActivity />;
+  if (user.role === "entrepreneur") return <EntrepreneurDashboard user={user} />;
+  if (user.role === "admin") return <AdminDashboard user={user} />;
+  return <CustomerActivity user={user} />;
 }

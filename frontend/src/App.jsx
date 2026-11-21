@@ -216,9 +216,24 @@ function App() {
             <span>hunar<span className="brand-light">hub</span></span>
           </a>
           <div className="nav-actions">
-            {user && <button className="nav-link nav-button" onClick={() => setView(view === "home" ? "dashboard" : "home")}>{view === "home" ? "My HunarHub" : "Marketplace"}</button>}
+            {user && (
+              <button
+                className="nav-account-link"
+                type="button"
+                onClick={() => setView(view === "home" ? "dashboard" : "home")}
+                aria-label={view === "home" ? "Open your dashboard" : "Return to the marketplace"}
+              >
+                <span className="nav-account-avatar" aria-hidden="true">
+                  {Array.from(user.displayName?.trim() || "H")[0]?.toLocaleUpperCase() ?? "H"}
+                </span>
+                <span className="nav-account-copy">
+                  <strong>{view === "home" ? "My HunarHub" : "Marketplace"}</strong>
+                  <small>{view === "home" ? user.displayName : "Continue exploring"}</small>
+                </span>
+              </button>
+            )}
             <NotificationCenter />
-            <a className="nav-link d-none d-sm-inline" href="#makers">Explore makers</a>
+            {view === "home" && <a className="nav-link d-none d-sm-inline" href="#makers">Explore makers</a>}
             {user ? (
               <button className="btn btn-outline-dark btn-sm rounded-pill px-3" type="button" onClick={() => signOut().then(() => { setView("home"); setNotice(""); }).catch((signOutError) => setNotice(signOutError.message))}>Sign out</button>
             ) : (
@@ -282,7 +297,7 @@ function App() {
             </div>
           </div>
           <div className="hero-bottom container">
-            <div><strong>Real people.</strong> Remarkable skills.</div>
+            <div><strong>Community craft.</strong> Remarkable skills.</div>
             <div className="hero-rating"><span>★★★★★</span> Local love, five stars at a time</div>
           </div>
         </section>
@@ -370,9 +385,19 @@ function App() {
                   <div className="col-md-4" key={maker.id}>
                     <article className="maker-card">
                       <div className={`maker-photo maker-photo-${(index % 3) + 1}`}>
+                        {maker.imageUrl && (
+                          <img
+                            className="maker-portrait"
+                            src={maker.imageUrl}
+                            alt={`${maker.displayName}${maker.isDemo ? ", sample profile" : ""}`}
+                            loading="lazy"
+                          />
+                        )}
+                        {!maker.imageUrl && <span className="maker-initial">{maker.displayName.charAt(0)}</span>}
                         <span className="photo-category">{maker.category}</span>
-                        <span className="verified-badge">✓ Verified</span>
-                        <span className="maker-initial">{maker.displayName.charAt(0)}</span>
+                        <span className={`verified-badge ${maker.isDemo ? "demo-badge" : ""}`}>
+                          {maker.isDemo ? "Sample · demo profile" : "✓ Verified"}
+                        </span>
                       </div>
                       <div className="maker-card-body">
                         <div className="maker-meta">{maker.location} <span>·</span> {maker.experienceYears} years of craft</div>
@@ -389,7 +414,7 @@ function App() {
                           <span className="maker-rating"><b>★ {maker.rating ? maker.rating.toFixed(1) : "New"}</b>{maker.reviewCount > 0 && ` (${maker.reviewCount})`}</span>
                           <span>From <strong>₹{Math.round(maker.startingPrice)}</strong></span>
                         </div>
-                        <button className="maker-request-button" onClick={() => setSelection({ type: "maker", id: maker.id })}>
+                        <button className="maker-request-button" type="button" onClick={() => setSelection({ type: "maker", id: maker.id })}>
                           View profile and services <span>→</span>
                         </button>
                       </div>
@@ -412,7 +437,7 @@ function App() {
                 </button>
               </div>
             )}
-            <div className="section-footnote"><span>✳</span> Every maker here is a real part of their local community.</div>
+            <div className="section-footnote"><span>✳</span> Sample profiles are labeled; verified makers are real community entrepreneurs.</div>
           </div>
         </section>
 
@@ -459,7 +484,6 @@ function App() {
           <div className="container maker-cta-inner">
             <div><div className="eyebrow">YOUR SKILL DESERVES TO BE SEEN</div><h2>Make your work<br />part of the story.</h2></div>
             <div className="cta-side"><p>Bring your craft to more people in your community. Your HunarHub journey starts with a hello.</p><button className="btn btn-light rounded-pill px-4" onClick={() => user ? (user.role === "entrepreneur" ? setView("dashboard") : setNotice("Sign out of your customer account to register as a maker.")) : openAuth("register", "entrepreneur")}>I’m a maker <span>↗</span></button></div>
-            <span className="cta-spark">✳</span>
           </div>
         </section>
       </main>}

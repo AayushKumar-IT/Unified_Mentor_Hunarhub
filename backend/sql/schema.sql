@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS entrepreneur_profiles (
   experience_years INTEGER NOT NULL DEFAULT 0 CHECK (experience_years >= 0),
   category_id UUID NOT NULL REFERENCES categories(id),
   user_id UUID UNIQUE REFERENCES users(id) ON DELETE SET NULL,
+  demo_key TEXT UNIQUE,
+  image_url TEXT,
+  is_demo BOOLEAN NOT NULL DEFAULT FALSE,
   verification_status TEXT NOT NULL DEFAULT 'pending'
     CHECK (verification_status IN ('pending', 'verified', 'rejected')),
   availability_status TEXT NOT NULL DEFAULT 'available'
@@ -60,6 +63,7 @@ CREATE TABLE IF NOT EXISTS entrepreneur_skills (
 
 CREATE TABLE IF NOT EXISTS services (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  demo_key TEXT UNIQUE,
   entrepreneur_id UUID NOT NULL REFERENCES entrepreneur_profiles(id),
   title TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
