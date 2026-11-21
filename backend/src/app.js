@@ -64,7 +64,7 @@ app.get("/api/entrepreneurs/:id", async (request, response, next) => {
     const { rows } = await pool.query(
       `SELECT p.id, p.display_name AS "displayName", p.bio, p.location,
               p.experience_years AS "experienceYears", p.availability_status AS availability,
-              p.is_demo AS "isDemo", p.image_url AS "imageUrl",
+              p.image_url AS "imageUrl",
               p.verification_status AS "verificationStatus",
               c.name AS category, c.slug AS "categorySlug",
               COALESCE((
@@ -86,7 +86,7 @@ app.get("/api/entrepreneurs/:id", async (request, response, next) => {
        FROM entrepreneur_profiles p
        JOIN categories c ON c.id = p.category_id
        WHERE p.id = $1 AND p.active = TRUE
-         AND (p.is_demo = TRUE OR p.verification_status = 'verified')
+         AND p.verification_status = 'verified'
          AND c.active = TRUE`,
       [request.params.id]
     );
@@ -134,7 +134,7 @@ app.get("/api/entrepreneurs/:id/reviews", async (request, response, next) => {
        LEFT JOIN users u ON u.id = r.customer_id
        WHERE r.entrepreneur_id = $1 AND r.status = 'published'
          AND p.active = TRUE
-         AND (p.is_demo = TRUE OR p.verification_status = 'verified')
+         AND p.verification_status = 'verified'
        ORDER BY r.created_at DESC
        LIMIT 50`,
       [request.params.id]
@@ -219,7 +219,7 @@ app.get("/api/entrepreneurs", async (request, response, next) => {
   const limit = Math.min(Math.max(Number.parseInt(request.query.limit, 10) || 12, 1), 48);
   const offset = Math.min(Math.max(Number.parseInt(request.query.offset, 10) || 0, 0), 1000000);
   const values = [];
-  const filters = ["(p.is_demo = TRUE OR p.verification_status = 'verified')", "p.active = TRUE"];
+  const filters = ["p.verification_status = 'verified'", "p.active = TRUE"];
   filters.push("c.active = TRUE");
   const priceRange = readPriceRange(request.query, response);
   if (!priceRange) return;
@@ -272,7 +272,6 @@ app.get("/api/entrepreneurs", async (request, response, next) => {
               p.bio,
               p.location,
               p.experience_years AS "experienceYears",
-              p.is_demo AS "isDemo",
               p.image_url AS "imageUrl",
               p.verification_status AS "verificationStatus",
               c.name AS category,

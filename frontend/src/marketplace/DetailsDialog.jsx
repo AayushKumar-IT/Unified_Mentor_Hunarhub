@@ -87,17 +87,14 @@ export default function DetailsDialog({ selection, onClose, onRequestService, on
               <img
                 className="details-maker-portrait"
                 src={details.imageUrl}
-                alt={`${details.displayName}${details.isDemo ? ", sample profile" : ""}`}
+                alt={details.displayName}
               />
             )}
             <div className="eyebrow">
-              {details.category} · {details.isDemo ? "SAMPLE DEMO PROFILE" : "VERIFIED LOCAL MAKER"}
+              {details.category} · VERIFIED LOCAL MAKER
             </div>
             <h2 id="details-title" className="details-title">{details.displayName}</h2>
             <p className="details-meta">{details.location} · {details.experienceYears} years of experience</p>
-            {details.isDemo && (
-              <p className="demo-profile-note">Sample profile for demonstration only. This is not a registered or verified maker, and service requests are disabled.</p>
-            )}
             <p className="details-description">{details.bio || "A local entrepreneur sharing their craft with the community."}</p>
             {details.skills.length > 0 && (
               <div className="maker-skills details-skills">
@@ -107,35 +104,25 @@ export default function DetailsDialog({ selection, onClose, onRequestService, on
             <div className="details-rating">★ {details.rating ? details.rating.toFixed(1) : "New"} {details.reviewCount ? `· ${details.reviewCount} reviews` : "· No reviews yet"}</div>
             <h3 className="details-section-title">Services</h3>
             {details.services.length ? details.services.map((service) => (
-              details.isDemo ? (
-                <article className="details-offering" key={service.id}>
-                  <div className="details-offering-heading">
-                    <div><strong>{service.title}</strong><p>{service.description}</p></div>
-                    <b>₹{Math.round(service.price)}</b>
-                  </div>
-                  <span className="demo-service-note">Demo service · requests disabled</span>
-                </article>
-              ) : (
-                <form className="details-offering" key={service.id} onSubmit={(event) => submitService(event, service.id)}>
-                  <div className="details-offering-heading">
-                    <div><strong>{service.title}</strong><p>{service.description}</p></div>
-                    <b>₹{Math.round(service.price)}</b>
-                  </div>
-                  {details.availability === "available" ? (
-                    <>
-                      <label className="details-label">
-                        Preferred date and time (optional)
-                        <input className="form-control form-control-sm" name="requestedFor" type="datetime-local" min={localDateTimeMinimum()} />
-                      </label>
-                      <label className="details-label">
-                        Message (optional)
-                        <textarea className="form-control form-control-sm" name="message" rows={2} maxLength={1000} placeholder="Share details about the service you need" />
-                      </label>
-                      <button className="btn btn-dark btn-sm rounded-pill" disabled={submitting}>Request this service</button>
-                    </>
-                  ) : <span className="status-badge status-unavailable">Not taking requests right now</span>}
-                </form>
-              )
+              <form className="details-offering" key={service.id} onSubmit={(event) => submitService(event, service.id)}>
+                <div className="details-offering-heading">
+                  <div><strong>{service.title}</strong><p>{service.description}</p></div>
+                  <b>₹{Math.round(service.price)}</b>
+                </div>
+                {details.availability === "available" ? (
+                  <>
+                    <label className="details-label">
+                      Preferred date and time (optional)
+                      <input className="form-control form-control-sm" name="requestedFor" type="datetime-local" min={localDateTimeMinimum()} />
+                    </label>
+                    <label className="details-label">
+                      Message (optional)
+                      <textarea className="form-control form-control-sm" name="message" rows={2} maxLength={1000} placeholder="Share details about the service you need" />
+                    </label>
+                    <button className="btn btn-dark btn-sm rounded-pill" disabled={submitting}>Request this service</button>
+                  </>
+                ) : <span className="status-badge status-unavailable">Not taking requests right now</span>}
+              </form>
             )) : <p className="dashboard-empty">No active services listed.</p>}
             <h3 className="details-section-title">Handmade products</h3>
             {details.products.length ? (

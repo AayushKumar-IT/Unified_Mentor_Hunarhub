@@ -27,19 +27,3 @@ FROM (VALUES
 ) AS skill(category_slug, name, slug)
 JOIN categories c ON c.slug = skill.category_slug
 ON CONFLICT (category_id, slug) DO UPDATE SET name = EXCLUDED.name, active = TRUE;
-
-UPDATE services
-SET active = FALSE
-WHERE entrepreneur_id IN (
-  SELECT id FROM entrepreneur_profiles WHERE is_demo = TRUE
-);
-
-UPDATE products
-SET active = FALSE
-WHERE entrepreneur_id IN (
-  SELECT id FROM entrepreneur_profiles WHERE is_demo = TRUE
-);
-
-UPDATE entrepreneur_profiles
-SET active = FALSE
-WHERE is_demo = TRUE;

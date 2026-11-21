@@ -388,15 +388,13 @@ function App() {
                           <img
                             className="maker-portrait"
                             src={maker.imageUrl}
-                            alt={`${maker.displayName}${maker.isDemo ? ", sample profile" : ""}`}
+                            alt={maker.displayName}
                             loading="lazy"
                           />
                         )}
                         {!maker.imageUrl && <span className="maker-initial">{maker.displayName.charAt(0)}</span>}
                         <span className="photo-category">{maker.category}</span>
-                        <span className={`verified-badge ${maker.isDemo ? "demo-badge" : ""}`}>
-                          {maker.isDemo ? "Sample · demo profile" : "✓ Verified"}
-                        </span>
+                        <span className="verified-badge">✓ Verified</span>
                       </div>
                       <div className="maker-card-body">
                         <div className="maker-meta">{maker.location} <span>·</span> {maker.experienceYears} years of craft</div>

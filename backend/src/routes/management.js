@@ -482,7 +482,7 @@ managementRouter.get(
         pool.query(
           `SELECT
              (SELECT COUNT(*)::int FROM users WHERE role = 'customer' AND active = TRUE) AS customers,
-             (SELECT COUNT(*)::int FROM entrepreneur_profiles WHERE active = TRUE AND is_demo = FALSE) AS entrepreneurs,
+             (SELECT COUNT(*)::int FROM entrepreneur_profiles WHERE active = TRUE) AS entrepreneurs,
              (SELECT COUNT(*)::int FROM orders) AS orders,
              (SELECT COUNT(*)::int FROM service_requests) AS "serviceRequests"`
         ),
@@ -491,7 +491,7 @@ managementRouter.get(
                   c.name AS category, p.created_at AS "createdAt"
            FROM entrepreneur_profiles p
            JOIN categories c ON c.id = p.category_id
-           WHERE p.verification_status = 'pending' AND p.is_demo = FALSE
+           WHERE p.verification_status = 'pending' AND p.active = TRUE
            ORDER BY p.created_at`
         )
       ]);
@@ -686,7 +686,7 @@ managementRouter.patch(
       const { rows } = await client.query(
         `UPDATE entrepreneur_profiles
          SET verification_status = $2
-         WHERE id = $1 AND verification_status = 'pending' AND is_demo = FALSE
+         WHERE id = $1 AND verification_status = 'pending' AND active = TRUE
         RETURNING id, user_id AS "userId",
                   verification_status AS "verificationStatus"`,
         [request.params.id, decision === "approve" ? "verified" : "rejected"]
