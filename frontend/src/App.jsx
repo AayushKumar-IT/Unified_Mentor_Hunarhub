@@ -99,20 +99,30 @@ function App() {
       if (maxPrice) params.set("maxPrice", maxPrice);
     }
 
-    Promise.all([
+    Promise.allSettled([
       getPage(`/api/entrepreneurs?${params.toString()}`),
       getPage(`/api/products?${params.toString()}`)
     ])
-      .then(([entrepreneurPage, productPage]) => {
+      .then(([entrepreneurResult, productResult]) => {
         if (!active) return;
-        setEntrepreneurs(entrepreneurPage.items);
-        setProducts(productPage.items);
-        setMoreMakers(entrepreneurPage.hasMore);
-        setMoreProducts(productPage.hasMore);
-        setError("");
-      })
-      .catch((loadError) => {
-        if (active) setError(loadError.message);
+        const failures = [];
+        if (entrepreneurResult.status === "fulfilled") {
+          setEntrepreneurs(entrepreneurResult.value.items);
+          setMoreMakers(entrepreneurResult.value.hasMore);
+        } else {
+          setEntrepreneurs([]);
+          setMoreMakers(false);
+          failures.push(`Local makers could not be loaded. ${entrepreneurResult.reason instanceof Error ? entrepreneurResult.reason.message : "Please try again."}`);
+        }
+        if (productResult.status === "fulfilled") {
+          setProducts(productResult.value.items);
+          setMoreProducts(productResult.value.hasMore);
+        } else {
+          setProducts([]);
+          setMoreProducts(false);
+          failures.push(`Products could not be loaded. ${productResult.reason instanceof Error ? productResult.reason.message : "Please try again."}`);
+        }
+        setError(failures.join(" "));
       })
       .finally(() => {
         if (active) setLoading(false);
