@@ -293,7 +293,6 @@ function App() {
               <div className="art-stem stem-two" />
               <div className="art-stem stem-three" />
               <div className="art-base" />
-              <div className="art-stamp">✳</div>
             </div>
           </div>
           <div className="hero-bottom container">
