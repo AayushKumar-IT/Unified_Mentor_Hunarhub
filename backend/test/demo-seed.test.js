@@ -5,6 +5,7 @@ import test from "node:test";
 const seed = readFileSync(new URL("../sql/seed.sql", import.meta.url), "utf8");
 const schema = readFileSync(new URL("../sql/schema.sql", import.meta.url), "utf8");
 const migration = readFileSync(new URL("../sql/migrations/006_hide_demo_profiles.sql", import.meta.url), "utf8");
+const imageMigration = readFileSync(new URL("../sql/migrations/007_entrepreneur_profile_image.sql", import.meta.url), "utf8");
 const app = readFileSync(new URL("../src/app.js", import.meta.url), "utf8");
 const management = readFileSync(new URL("../src/routes/management.js", import.meta.url), "utf8");
 
@@ -21,4 +22,11 @@ test("legacy demo cleanup remains transactional for databases upgrading from old
   assert.match(migration, /UPDATE entrepreneur_profiles[\s\S]*?WHERE is_demo = TRUE/);
   assert.match(migration, /^BEGIN;/);
   assert.match(migration, /COMMIT;\s*$/);
+});
+
+test("entrepreneur image migration safely adds the column used by marketplace profile queries", () => {
+  assert.match(imageMigration, /ALTER TABLE entrepreneur_profiles/i);
+  assert.match(imageMigration, /ADD COLUMN IF NOT EXISTS image_url TEXT/i);
+  assert.doesNotMatch(imageMigration, /\b(DROP|DELETE|TRUNCATE)\b/i);
+  assert.match(app, /p\.image_url AS "imageUrl"/);
 });

@@ -137,9 +137,10 @@ psql -h localhost -U hunarhub -d hunarhub -f backend\sql\migrations\003_skills_c
 psql -h localhost -U hunarhub -d hunarhub -f backend\sql\migrations\004_in_app_notifications.sql
 psql -h localhost -U hunarhub -d hunarhub -f backend\sql\migrations\005_demo_entrepreneurs.sql
 psql -h localhost -U hunarhub -d hunarhub -f backend\sql\migrations\006_hide_demo_profiles.sql
+psql -h localhost -U hunarhub -d hunarhub -f backend\sql\migrations\007_entrepreneur_profile_image.sql
 ```
 
-Run migrations only when upgrading a database that does not already have those changes. For databases that contain demo profiles from an earlier version, migrations `005` and `006` add the legacy demo metadata and deactivate those profiles and listings while preserving transaction history. The current schema, seed, and application do not require the legacy demo column.
+Run migrations only when upgrading a database that does not already have those changes. For databases that contain demo profiles from an earlier version, migrations `005` and `006` add the legacy demo metadata and deactivate those profiles and listings while preserving transaction history. Migration `007` safely adds the entrepreneur profile image URL column used by marketplace profile queries. The current schema, seed, and application do not require the legacy demo column.
 
 ## Development commands
 
