@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { pool, rollbackTransaction } from "../db.js";
 import { requireRole, requireTrustedOrigin } from "../auth.js";
-import { isUuid, isLocalImageUrl } from "../validation.js";
+import { isUuid, isValidProductImageUrl } from "../validation.js";
 import { createNotification } from "../notifications.js";
 
 export const managementRouter = Router();
@@ -366,7 +366,7 @@ managementRouter.post(
       typeof description !== "string" || description.length > 2000 ||
       typeof price !== "number" || !Number.isFinite(price) || price < 0 || price > 10000000 ||
       !Number.isInteger(stock) || stock < 0 || stock > 1000000 ||
-      !isLocalImageUrl(imageUrl)
+      !isValidProductImageUrl(imageUrl)
     ) {
       return response.status(400).json({
         error: { code: "INVALID_PRODUCT", message: "Enter a title, description, valid price, and stock quantity." }
@@ -410,7 +410,7 @@ managementRouter.patch(
       typeof price !== "number" || !Number.isFinite(price) || price < 0 || price > 10000000 ||
       !Number.isInteger(stock) || stock < 0 || stock > 1000000 ||
       typeof active !== "boolean" ||
-      !isLocalImageUrl(imageUrl)
+      !isValidProductImageUrl(imageUrl)
     ) {
       return response.status(400).json({
         error: { code: "INVALID_PRODUCT", message: "Enter a title, description, valid price, stock, and active state." }

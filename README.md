@@ -15,7 +15,7 @@ HunarHub connects customers with local micro-entrepreneurs, independent makers, 
 | API | REST, JSON |
 | Database | PostgreSQL, `pg` connection pool |
 | Authentication | Database-backed HTTP-only sessions, scrypt password hashing |
-| Uploads | Multer, `file-type`, local image storage |
+| Uploads | Multer, `file-type`, Cloudinary image storage |
 | Tests | Node.js built-in test runner |
 
 ## Key features
@@ -87,6 +87,8 @@ DATABASE_URL=postgresql://hunarhub:replace_with_a_local_password@localhost:5432/
 ```
 
 Percent-encode URL-special characters in the password. Keep `.env` private; it is ignored by Git. `APP_ORIGIN` must match the browser origin used to open the Vite frontend.
+
+Configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` with credentials from your Cloudinary account to enable product image uploads. Set these in Render's environment settings for production; do not commit real credentials.
 
 ### 3. Create the schema and catalog
 
@@ -181,8 +183,8 @@ frontend/
 - Registration and sign-in endpoints are rate-limited.
 - State-changing API routes validate the trusted frontend origin.
 - Product image uploads are limited to supported image formats and 5 MB.
-- Uploads are stored under `backend/uploads`. For Render production, attach a persistent disk mounted at `/opt/render/project/src/backend/uploads` so files survive deploys and restarts. Vercel forwards `/media/*` requests to the Render API.
-- Product records only store image paths; they do not contain the uploaded files. If an existing image URL returns 404, its file is missing from the Render disk and must be uploaded again after persistent storage is configured.
+- New image uploads are stored in the Cloudinary `hunarhub/entrepreneur-images` folder. Existing `/media/...` image URLs remain supported and are still served from the backend; on Render, keep a persistent disk mounted at `/opt/render/project/src/backend/uploads` for those legacy files. Vercel forwards `/media/*` requests to the Render API.
+- Product records store image URLs, not image contents. If an older local image URL returns 404, its file is missing from the Render disk and must be uploaded again.
 - Product orders are requests and do not represent payment processing or payment confirmation.
 - In-app notifications are supported; email/SMS delivery is not currently included.
 

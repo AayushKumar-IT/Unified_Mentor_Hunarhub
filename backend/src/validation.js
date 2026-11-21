@@ -12,9 +12,24 @@ export function isValidReviewInput({ orderId, serviceRequestId, rating, reviewTe
     typeof reviewText === "string" && reviewText.trim().length <= 1000;
 }
 
-export function isLocalImageUrl(value) {
-  return value === null || value === undefined || (
-    typeof value === "string" &&
-    /^\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(jpg|png|webp)$/i.test(value)
-  );
+export function isValidProductImageUrl(value) {
+  if (value === null || value === undefined) return true;
+  if (typeof value !== "string") return false;
+  if (/^\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(jpg|png|webp)$/i.test(value)) {
+    return true;
+  }
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" &&
+      url.hostname === "res.cloudinary.com" &&
+      !url.username &&
+      !url.password &&
+      !url.port &&
+      !url.search &&
+      !url.hash &&
+      /^\/[^/]+\/image\/upload\/v\d+\/hunarhub\/entrepreneur-images\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?:\.(jpg|png|webp))?$/i.test(url.pathname);
+  } catch {
+    return false;
+  }
 }
