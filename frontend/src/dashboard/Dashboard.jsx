@@ -1,8 +1,26 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiRequest } from "../api.js";
 
 function StatusBadge({ status }) {
   return <span className={`status-badge status-${status}`}>{status.replaceAll("_", " ")}</span>;
+}
+
+function DashboardToast({ message, onDismiss }) {
+  useEffect(() => {
+    if (!message) return undefined;
+    const timer = window.setTimeout(onDismiss, 5000);
+    return () => window.clearTimeout(timer);
+  }, [message, onDismiss]);
+
+  if (!message) return null;
+
+  return (
+    <div className="dashboard-toast" role="status" aria-live="polite">
+      <span className="dashboard-toast-icon" aria-hidden="true">✓</span>
+      <span>{message}</span>
+      <button type="button" aria-label="Dismiss notification" onClick={onDismiss}>×</button>
+    </div>
+  );
 }
 
 function DashboardHeading({ eyebrow, title, description, user }) {
@@ -37,6 +55,13 @@ function EntrepreneurDashboard({ user }) {
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const dismissToast = useCallback(() => setMessage(""), []);
+
+  function navigateToSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    section?.scrollIntoView({ behavior: "smooth", block: "start" });
+    section?.focus({ preventScroll: true });
+  }
 
   async function loadDashboard() {
     const [profileData, listingData, transactionData, earningsData, categoryData] = await Promise.all([
@@ -141,6 +166,7 @@ function EntrepreneurDashboard({ user }) {
 
   async function resubmitProfile() {
     setError("");
+    setMessage("");
     try {
       const result = await apiRequest("/api/entrepreneur/profile/resubmit", { method: "POST" });
       setProfile({ ...profile, verificationStatus: result.verificationStatus });
@@ -152,6 +178,8 @@ function EntrepreneurDashboard({ user }) {
 
   async function saveListing(event, item, type) {
     event.preventDefault();
+    setError("");
+    setMessage("");
     const form = new FormData(event.currentTarget);
     const payload = {
       title: form.get("title"),
@@ -185,6 +213,8 @@ function EntrepreneurDashboard({ user }) {
   }
 
   async function toggleAvailability() {
+    setError("");
+    setMessage("");
     try {
       const availability = profile.availability === "available" ? "unavailable" : "available";
       const result = await apiRequest("/api/entrepreneur/availability", {
@@ -192,6 +222,7 @@ function EntrepreneurDashboard({ user }) {
         body: JSON.stringify({ availability })
       });
       setProfile({ ...profile, availability: result.availability });
+      setMessage(result.availability === "available" ? "You’re now available for requests." : "You’re now marked unavailable.");
     } catch (updateError) {
       setError(updateError.message);
     }
@@ -206,8 +237,8 @@ function EntrepreneurDashboard({ user }) {
         method: "PUT",
         body: JSON.stringify({ skillIds: selectedSkills })
       });
-      setMessage("Your skills have been updated.");
       await loadDashboard();
+      setMessage("Your skills have been updated.");
     } catch (saveError) {
       setError(saveError.message);
     }
@@ -252,17 +283,25 @@ function EntrepreneurDashboard({ user }) {
         user={user}
       />
       <div className="maker-availability-row">
-        <button className="btn btn-outline-dark rounded-pill" onClick={toggleAvailability}>
+        <button className="btn btn-outline-dark rounded-pill" type="button" onClick={toggleAvailability}>
           {profile.availability === "available" ? "Available for requests" : "Not taking requests"}
         </button>
       </div>
-      {message && <div className="alert alert-success" role="status">{message}</div>}
+      <DashboardToast message={message} onDismiss={dismissToast} />
       {error && <div className="alert alert-danger" role="alert">{error}</div>}
       <div className="dashboard-stats">
-        <div><span>Completed earnings</span><strong>₹{Math.round(earnings?.completedEarnings ?? 0)}</strong></div>
-        <div><span>Completed transactions</span><strong>{earnings?.completedTransactions ?? 0}</strong></div>
-        <div><span>Services</span><strong>{listings.services.length}</strong></div>
-        <div><span>Products</span><strong>{listings.products.length}</strong></div>
+        <button className="dashboard-stat-card maker-stat-card" type="button" aria-label="View completed earnings" onClick={() => navigateToSection("maker-transactions")}>
+          <span>Completed earnings</span><strong>₹{Math.round(earnings?.completedEarnings ?? 0)}</strong><small>From fulfilled work</small><span className="dashboard-stat-arrow" aria-hidden="true">↗</span>
+        </button>
+        <button className="dashboard-stat-card maker-stat-card" type="button" aria-label="View completed transactions" onClick={() => navigateToSection("maker-transactions")}>
+          <span>Completed transactions</span><strong>{earnings?.completedTransactions ?? 0}</strong><small>Orders and service requests</small><span className="dashboard-stat-arrow" aria-hidden="true">↗</span>
+        </button>
+        <button className="dashboard-stat-card maker-stat-card" type="button" aria-label="Manage your services" onClick={() => navigateToSection("maker-services")}>
+          <span>Your services</span><strong>{listings.services.length}</strong><small>Listed services</small><span className="dashboard-stat-arrow" aria-hidden="true">↗</span>
+        </button>
+        <button className="dashboard-stat-card maker-stat-card" type="button" aria-label="Manage your products" onClick={() => navigateToSection("maker-products")}>
+          <span>Your products</span><strong>{listings.products.length}</strong><small>Handmade listings</small><span className="dashboard-stat-arrow" aria-hidden="true">↗</span>
+        </button>
       </div>
       <section id="profile-approval-status" className={`dashboard-card approval-status-card approval-${profile.verificationStatus}`} tabIndex="-1">
         <div className="approval-status-heading">
@@ -281,8 +320,11 @@ function EntrepreneurDashboard({ user }) {
           <button className="btn btn-sm btn-dark rounded-pill" onClick={resubmitProfile}>Resubmit for review</button>
         )}
       </section>
-      <section className="dashboard-card dashboard-profile-card">
-        <h2>Your public profile</h2>
+      <section id="maker-profile" className="dashboard-card dashboard-profile-card" tabIndex="-1">
+        <div className="dashboard-section-heading">
+          <span className="dashboard-section-icon" aria-hidden="true">✦</span>
+          <div><div className="eyebrow">HOW CUSTOMERS FIND YOU</div><h2>Your public profile</h2></div>
+        </div>
         <form className="dashboard-form profile-form" onSubmit={saveProfile}>
           <label>Business or display name<input className="form-control" name="displayName" required minLength={2} maxLength={100} defaultValue={profile.displayName} /></label>
           <label>About your work<textarea className="form-control" name="bio" maxLength={2000} rows={3} defaultValue={profile.bio} /></label>
@@ -298,8 +340,11 @@ function EntrepreneurDashboard({ user }) {
           <button className="btn btn-dark rounded-pill">Save profile</button>
         </form>
       </section>
-      <section className="dashboard-card dashboard-skill-card">
-        <h2>Your skills</h2>
+      <section id="maker-skills" className="dashboard-card dashboard-skill-card" tabIndex="-1">
+        <div className="dashboard-section-heading">
+          <span className="dashboard-section-icon" aria-hidden="true">✧</span>
+          <div><div className="eyebrow">YOUR CRAFT</div><h2>Your skills</h2></div>
+        </div>
         <p>Choose the skills that best describe your work in {profile.categorySlug.replaceAll("-", " ")}.</p>
         {skillOptions.length ? (
           <form onSubmit={saveSkills}>
@@ -324,8 +369,11 @@ function EntrepreneurDashboard({ user }) {
         ) : <p className="dashboard-empty">No active skills are configured for this category yet.</p>}
       </section>
       <div className="dashboard-grid">
-        <section className="dashboard-card">
-          <h2>Add a service</h2>
+        <section id="maker-add-service" className="dashboard-card dashboard-create-card" tabIndex="-1">
+          <div className="dashboard-section-heading">
+            <span className="dashboard-section-icon" aria-hidden="true">↗</span>
+            <div><div className="eyebrow">OFFER YOUR EXPERTISE</div><h2>Add a service</h2></div>
+          </div>
           <form className="dashboard-form" onSubmit={(event) => addListing(event, "services")}>
             <input className="form-control" name="title" placeholder="Service name" required minLength={2} maxLength={120} />
             <textarea className="form-control" name="description" placeholder="What does this service include?" maxLength={2000} />
@@ -333,8 +381,11 @@ function EntrepreneurDashboard({ user }) {
             <button className="btn btn-dark rounded-pill">Add service</button>
           </form>
         </section>
-        <section className="dashboard-card">
-          <h2>Add a handmade product</h2>
+        <section id="maker-add-product" className="dashboard-card dashboard-create-card" tabIndex="-1">
+          <div className="dashboard-section-heading">
+            <span className="dashboard-section-icon" aria-hidden="true">◇</span>
+            <div><div className="eyebrow">SHARE WHAT YOU MAKE</div><h2>Add a handmade product</h2></div>
+          </div>
           <form className="dashboard-form" onSubmit={(event) => addListing(event, "products")}>
             <input className="form-control" name="title" placeholder="Product name" required minLength={2} maxLength={120} />
             <textarea className="form-control" name="description" placeholder="Tell customers about it" maxLength={2000} />
@@ -348,9 +399,12 @@ function EntrepreneurDashboard({ user }) {
           </form>
         </section>
       </div>
-      <section className="dashboard-card dashboard-listings">
-        <h2>Manage your listings</h2>
-        <h3>Services</h3>
+      <section id="maker-listings" className="dashboard-card dashboard-listings" tabIndex="-1">
+        <div className="dashboard-section-heading">
+          <span className="dashboard-section-icon" aria-hidden="true">▤</span>
+          <div><div className="eyebrow">YOUR MARKETPLACE PRESENCE</div><h2>Manage your listings</h2></div>
+        </div>
+        <h3 id="maker-services" className="maker-listing-subheading" tabIndex="-1">Services <span>{listings.services.length}</span></h3>
         {listings.services.length ? listings.services.map((service) => (
           <details className="listing-editor" key={service.id}>
             <summary>
@@ -366,7 +420,7 @@ function EntrepreneurDashboard({ user }) {
             </form>
           </details>
         )) : <p className="dashboard-empty">You have not added any services yet.</p>}
-        <h3 className="mt-4">Products</h3>
+        <h3 id="maker-products" className="maker-listing-subheading mt-4" tabIndex="-1">Products <span>{listings.products.length}</span></h3>
         {listings.products.length ? listings.products.map((product) => (
           <details className="listing-editor" key={product.id}>
             <summary>
@@ -388,7 +442,11 @@ function EntrepreneurDashboard({ user }) {
           </details>
         )) : <p className="dashboard-empty">You have not added any products yet.</p>}
       </section>
-      <section className="dashboard-card dashboard-transactions">
+      <section id="maker-transactions" className="dashboard-card dashboard-transactions" tabIndex="-1">
+        <div className="dashboard-section-heading">
+          <span className="dashboard-section-icon" aria-hidden="true">⌁</span>
+          <div><div className="eyebrow">STAY CONNECTED</div><h2>Customer activity</h2></div>
+        </div>
         <h2>Service requests</h2>
         {transactions.requests.length ? transactions.requests.map((item) => (
           <div className="transaction-row" key={item.id}>
@@ -438,6 +496,7 @@ function CustomerActivity({ user }) {
   const [transactions, setTransactions] = useState([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const dismissToast = useCallback(() => setMessage(""), []);
   const [reviewingId, setReviewingId] = useState(null);
   const [complainingId, setComplainingId] = useState(null);
 
@@ -448,12 +507,15 @@ function CustomerActivity({ user }) {
   }, []);
 
   async function cancel(item) {
+    setError("");
+    setMessage("");
     try {
       const path = item.type === "order" ? `/api/orders/${item.id}/status` : `/api/service-requests/${item.id}/status`;
       await apiRequest(path, { method: "PATCH", body: JSON.stringify({ action: "cancel" }) });
       setTransactions((items) => items.map((entry) =>
         entry.id === item.id ? { ...entry, status: "cancelled" } : entry
       ));
+      setMessage(item.type === "order" ? "Your order was cancelled." : "Your service request was cancelled.");
     } catch (cancelError) {
       setError(cancelError.message);
     }
@@ -461,6 +523,8 @@ function CustomerActivity({ user }) {
 
   async function submitReview(item, event) {
     event.preventDefault();
+    setError("");
+    setMessage("");
     const form = new FormData(event.currentTarget);
     const rating = Number(form.get("rating"));
     const reviewText = form.get("reviewText");
@@ -485,6 +549,8 @@ function CustomerActivity({ user }) {
 
   async function submitComplaint(item, event) {
     event.preventDefault();
+    setError("");
+    setMessage("");
     const form = new FormData(event.currentTarget);
     try {
       await apiRequest("/api/complaints", {
@@ -516,7 +582,7 @@ function CustomerActivity({ user }) {
         user={user}
       />
       {error && <div className="alert alert-danger" role="alert">{error}</div>}
-      {message && <div className="alert alert-success" role="status">{message}</div>}
+      <DashboardToast message={message} onDismiss={dismissToast} />
       <div className="dashboard-stats customer-activity-stats">
         <div><span>Total requests and orders</span><strong>{transactions.length}</strong></div>
         <div><span>In progress</span><strong>{pendingTransactions}</strong></div>
