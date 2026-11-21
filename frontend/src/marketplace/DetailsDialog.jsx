@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { apiRequest } from "../api.js";
 
+function revealImageFallback(event) {
+  event.currentTarget.hidden = true;
+  event.currentTarget.nextElementSibling?.removeAttribute("hidden");
+}
+
 function localDateTimeMinimum() {
   const date = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
   return date.toISOString().slice(0, 16);
@@ -83,48 +88,63 @@ export default function DetailsDialog({ selection, onClose, onRequestService, on
         {error && <div className="alert alert-danger" role="alert">{error}</div>}
         {details && selection.type === "maker" && (
           <>
-            {details.imageUrl && (
-              <img
-                className="details-maker-portrait"
-                src={details.imageUrl}
-                alt={details.displayName}
-              />
-            )}
-            <div className="eyebrow">
-              {details.category} · VERIFIED LOCAL MAKER
-            </div>
-            <h2 id="details-title" className="details-title">{details.displayName}</h2>
-            <p className="details-meta">{details.location} · {details.experienceYears} years of experience</p>
-            <p className="details-description">{details.bio || "A local entrepreneur sharing their craft with the community."}</p>
-            {details.skills.length > 0 && (
-              <div className="maker-skills details-skills">
-                {details.skills.map((skill) => <span key={skill.id}>{skill.name}</span>)}
+            <header className="details-maker-hero">
+              {details.imageUrl && (
+                <img className="details-maker-portrait" src={details.imageUrl} alt={details.displayName} onError={revealImageFallback} />
+              )}
+              <div className="details-maker-placeholder" aria-hidden="true" hidden={Boolean(details.imageUrl)}>{details.displayName.charAt(0)}</div>
+              <div className="details-maker-intro">
+                <div className="eyebrow">{details.category} · LOCAL MAKER</div>
+                <h2 id="details-title" className="details-title">{details.displayName}</h2>
+                <p className="details-meta">{details.location} · {details.experienceYears} years of experience</p>
+                <div className="details-rating">★ {details.rating ? details.rating.toFixed(1) : "New"} {details.reviewCount ? `· ${details.reviewCount} reviews` : "· No reviews yet"}</div>
               </div>
-            )}
-            <div className="details-rating">★ {details.rating ? details.rating.toFixed(1) : "New"} {details.reviewCount ? `· ${details.reviewCount} reviews` : "· No reviews yet"}</div>
-            <h3 className="details-section-title">Services</h3>
-            {details.services.length ? details.services.map((service) => (
-              <form className="details-offering" key={service.id} onSubmit={(event) => submitService(event, service.id)}>
-                <div className="details-offering-heading">
-                  <div><strong>{service.title}</strong><p>{service.description}</p></div>
-                  <b>₹{Math.round(service.price)}</b>
+            </header>
+            <section className="details-maker-about" aria-label="About the maker">
+              <h3 className="details-section-title">A little about the maker</h3>
+              <p className="details-description">{details.bio || "A local entrepreneur sharing their craft with the community."}</p>
+              {details.skills.length > 0 && (
+                <div className="maker-skills details-skills">
+                  {details.skills.map((skill) => <span key={skill.id}>{skill.name}</span>)}
                 </div>
-                {details.availability === "available" ? (
-                  <>
-                    <label className="details-label">
-                      Preferred date and time (optional)
-                      <input className="form-control form-control-sm" name="requestedFor" type="datetime-local" min={localDateTimeMinimum()} />
-                    </label>
-                    <label className="details-label">
-                      Message (optional)
-                      <textarea className="form-control form-control-sm" name="message" rows={2} maxLength={1000} placeholder="Share details about the service you need" />
-                    </label>
-                    <button className="btn btn-dark btn-sm rounded-pill" disabled={submitting}>Request this service</button>
-                  </>
-                ) : <span className="status-badge status-unavailable">Not taking requests right now</span>}
-              </form>
-            )) : <p className="dashboard-empty">No active services listed.</p>}
-            <h3 className="details-section-title">Handmade products</h3>
+              )}
+            </section>
+            <section className="details-maker-section">
+              <div className="details-section-heading">
+                <div><div className="eyebrow">BOOK A SERVICE</div><h3 className="details-section-title">Current offerings</h3></div>
+                <p>Browse available work or share what you have in mind.</p>
+              </div>
+              {details.services.length ? (
+                <div className="details-offerings-grid">
+                  {details.services.map((service) => (
+                    <form className="details-offering" key={service.id} onSubmit={(event) => submitService(event, service.id)}>
+                      <div className="details-offering-heading">
+                        <div><strong>{service.title}</strong><p>{service.description}</p></div>
+                        <b>₹{Math.round(service.price)}</b>
+                      </div>
+                      {details.availability === "available" ? (
+                        <>
+                          <label className="details-label">
+                            Preferred date and time (optional)
+                            <input className="form-control form-control-sm" name="requestedFor" type="datetime-local" min={localDateTimeMinimum()} />
+                          </label>
+                          <label className="details-label">
+                            Message (optional)
+                            <textarea className="form-control form-control-sm" name="message" rows={2} maxLength={1000} placeholder="Share details about the service you need" />
+                          </label>
+                          <button className="btn btn-dark btn-sm rounded-pill" disabled={submitting}>Request this service</button>
+                        </>
+                      ) : <span className="status-badge status-unavailable">Not taking requests right now</span>}
+                    </form>
+                  ))}
+                </div>
+              ) : <p className="dashboard-empty">No active services listed.</p>}
+            </section>
+            <section className="details-maker-section">
+              <div className="details-section-heading">
+                <div><div className="eyebrow">MADE WITH CARE</div><h3 className="details-section-title">Handmade products</h3></div>
+                <p>Pieces made and listed by this local maker.</p>
+              </div>
             {details.products.length ? (
               <div className="details-maker-products">
                 {details.products.map((product) => (
@@ -135,14 +155,22 @@ export default function DetailsDialog({ selection, onClose, onRequestService, on
                     onClick={() => onViewProduct(product.id)}
                   >
                     {product.imageUrl
-                      ? <img src={product.imageUrl} alt="" />
+                      ? <>
+                        <img src={product.imageUrl} alt="" onError={revealImageFallback} />
+                        <span className="details-maker-product-placeholder" aria-hidden="true" hidden>✳</span>
+                      </>
                       : <span className="details-maker-product-placeholder" aria-hidden="true">✳</span>}
                     <span><strong>{product.title}</strong><small>₹{Math.round(product.price)} · {product.stock} available</small></span>
                   </button>
                 ))}
               </div>
             ) : <p className="dashboard-empty">No products currently listed.</p>}
-            <h3 className="details-section-title">Customer reviews</h3>
+            </section>
+            <section className="details-maker-section">
+            <div className="details-section-heading">
+              <div><div className="eyebrow">COMMUNITY NOTES</div><h3 className="details-section-title">Customer reviews</h3></div>
+              <p>Feedback from customers who worked with this maker.</p>
+            </div>
             {reviews.length ? reviews.map((review) => (
               <article className="details-review" key={review.id}>
                 <div><strong>{review.customerName || "HunarHub customer"}</strong><span>★ {review.rating}</span></div>
@@ -150,12 +178,16 @@ export default function DetailsDialog({ selection, onClose, onRequestService, on
                 <small>{new Date(review.createdAt).toLocaleDateString()}</small>
               </article>
             )) : <p className="dashboard-empty">No customer reviews yet.</p>}
+            </section>
           </>
         )}
         {details && selection.type === "product" && (
           <>
             {details.imageUrl ? (
-              <img className="details-product-image" src={details.imageUrl} alt={details.title} />
+              <>
+                <img className="details-product-image" src={details.imageUrl} alt={details.title} onError={revealImageFallback} />
+                <div className="details-product-placeholder" aria-hidden="true" hidden>✳</div>
+              </>
             ) : (
               <div className="details-product-placeholder" aria-hidden="true">✳</div>
             )}

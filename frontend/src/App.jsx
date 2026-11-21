@@ -14,6 +14,11 @@ const categoryIcons = {
   "small-vendor": "🧺"
 };
 
+function revealImageFallback(event) {
+  event.currentTarget.hidden = true;
+  event.currentTarget.nextElementSibling?.removeAttribute("hidden");
+}
+
 async function getJson(url) {
   const response = await fetch(url);
   if (!response.ok) {
@@ -55,6 +60,7 @@ function App() {
   const [selection, setSelection] = useState(null);
   const [view, setView] = useState("home");
   const [notice, setNotice] = useState("");
+  const [failedHeroImage, setFailedHeroImage] = useState("");
 
   useEffect(() => {
     if (user && user.role !== "customer") setView("dashboard");
@@ -217,6 +223,9 @@ function App() {
     setSelection(null);
   }
 
+  const featuredProduct = products.find((product) => product.imageUrl) || products[0];
+  const hasFeaturedImage = Boolean(featuredProduct?.imageUrl && failedHeroImage !== featuredProduct.imageUrl);
+
   return (
     <>
       <header className="site-header">
@@ -225,6 +234,13 @@ function App() {
             <span className="brand-icon">h</span>
             <span>hunar<span className="brand-light">hub</span></span>
           </a>
+          {view === "home" && (
+            <div className="header-discovery-nav" aria-label="Discover HunarHub">
+              <a href="#products">Shop handmade</a>
+              <a href="#makers">Our makers</a>
+              <a href="#categories">Explore crafts</a>
+            </div>
+          )}
           <div className="nav-actions">
             {user && (
               <button
@@ -243,7 +259,6 @@ function App() {
               </button>
             )}
             <NotificationCenter />
-            {view === "home" && <a className="nav-link d-none d-sm-inline" href="#makers">Explore makers</a>}
             {user ? (
               <button className="btn btn-outline-dark btn-sm rounded-pill px-3" type="button" onClick={() => signOut().then(() => { setView("home"); setNotice(""); }).catch((signOutError) => setNotice(signOutError.message))}>Sign out</button>
             ) : (
@@ -260,7 +275,7 @@ function App() {
         <main className="container"><Dashboard user={user} /></main>
       ) : <main>
         {notice && <div className="container pt-3"><div className="alert alert-info alert-dismissible" role="status">{notice}<button className="btn-close" aria-label="Dismiss" onClick={() => setNotice("")} /></div></div>}
-        <section className="hero-section">
+        <section className={`hero-section${hasFeaturedImage ? " hero-section-featured" : ""}`}>
           <div className="container hero-content">
             <div className="hero-copy">
               <div className="eyebrow"><span className="eyebrow-dot" /> GOOD WORK, CLOSE TO HOME</div>
@@ -269,6 +284,10 @@ function App() {
                 Meet the talented people behind the things you love. Find a
                 trusted local service or a handmade piece with a story.
               </p>
+              <div className="hero-actions">
+                <a className="hero-primary-action" href="#products">Explore handmade <span aria-hidden="true">→</span></a>
+                <a className="hero-secondary-action" href="#makers">Meet the makers</a>
+              </div>
               <form className="search-panel" onSubmit={(event) => event.preventDefault()}>
                 <label className="search-field">
                   <span aria-hidden="true">⌕</span>
@@ -293,7 +312,17 @@ function App() {
               </form>
               <div className="hero-note"><span>✳</span> Every purchase keeps a local skill thriving.</div>
             </div>
-            <div className="hero-art" aria-label="Illustration of a local potter at work" role="img">
+            <div className="hero-art" aria-label={hasFeaturedImage ? `Handmade ${featuredProduct.title}` : "Illustration of a local potter at work"} role="img">
+              {hasFeaturedImage && (
+                <>
+                  <img className="hero-feature-image" src={featuredProduct.imageUrl} alt="" onError={() => setFailedHeroImage(featuredProduct.imageUrl)} />
+                  <div className="hero-feature-caption">
+                    <span>MADE BY A LOCAL MAKER</span>
+                    <strong>{featuredProduct.title}</strong>
+                    <small>{featuredProduct.sellerName} · ₹{Math.round(featuredProduct.price)}</small>
+                  </div>
+                </>
+              )}
               <div className="sun-shape" />
               <div className="art-label"><span>MADE BY HAND</span><b>Made with meaning.</b></div>
               <div className="pottery pottery-back" />
@@ -311,7 +340,7 @@ function App() {
           </div>
         </section>
 
-        <section className="category-section container" aria-labelledby="category-title">
+        <section id="categories" className="category-section container" aria-labelledby="category-title">
           <div className="section-heading">
             <div>
               <div className="eyebrow">A LITTLE BIT OF EVERYTHING</div>
@@ -391,7 +420,7 @@ function App() {
             ) : entrepreneurs.length > 0 ? (
               <div className="row g-4">
                 {entrepreneurs.map((maker, index) => (
-                  <div className="col-md-4" key={maker.id}>
+                  <div className="col-md-6 col-xl-3" key={maker.id}>
                     <article className="maker-card">
                       <div className={`maker-photo maker-photo-${(index % 3) + 1}`}>
                         {maker.imageUrl && (
@@ -400,9 +429,10 @@ function App() {
                             src={maker.imageUrl}
                             alt={maker.displayName}
                             loading="lazy"
+                            onError={revealImageFallback}
                           />
                         )}
-                        {!maker.imageUrl && <span className="maker-initial">{maker.displayName.charAt(0)}</span>}
+                        <span className="maker-initial" hidden={Boolean(maker.imageUrl)}>{maker.displayName.charAt(0)}</span>
                         <span className="photo-category">{maker.category}</span>
                         <span className="verified-badge">✓ Verified</span>
                       </div>
@@ -448,7 +478,7 @@ function App() {
           </div>
         </section>
 
-        <section className="products-section container">
+        <section id="products" className="products-section container">
           <div className="section-heading">
             <div>
               <div className="eyebrow">A STORY IN EVERY STITCH & STROKE</div>
@@ -458,11 +488,14 @@ function App() {
           </div>
           <div className="row g-4">
             {products.map((product, index) => (
-              <div className="col-6 col-lg-4" key={product.id}>
+              <div className="col-6 col-xl-3 col-lg-4" key={product.id}>
                 <article className="product-card">
                   <div className={`product-art product-art-${(index % 3) + 1}`}>
                     {product.imageUrl
-                      ? <img src={product.imageUrl} alt={product.title} loading="lazy" />
+                      ? <>
+                        <img src={product.imageUrl} alt={product.title} loading="lazy" onError={revealImageFallback} />
+                        <span hidden aria-hidden="true">{["◒", "✿", "◉"][index % 3]}</span>
+                      </>
                       : <span aria-hidden="true">{["◒", "✿", "◉"][index]}</span>}
                   </div>
                   <div className="product-info">
